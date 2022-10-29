@@ -1,16 +1,12 @@
 <template>
   <div class="login-container">
     <div class="header">
-      <img class="header__logo" src="@/assets/logo.png" alt="logo" />
+      <img v-if="localIds" class="header__logo" :src="localIds" alt="logo" />
+      <img v-else class="header__logo" src="@/assets/logo.png" alt="logo" />
       <p class="header__title">Vue-H5-Template</p>
     </div>
 
-    <van-form
-      class="form"
-      validate-trigger="onSubmit"
-      :show-error="false"
-      @submit="onSubmit"
-    >
+    <van-form class="form" validate-trigger="onSubmit" :show-error="false" @submit="onSubmit">
       <van-field
         v-model="form.username"
         type="text"
@@ -40,26 +36,10 @@
       />
 
       <div style="margin: 36px">
-        <van-button
-          round
-          block
-          :loading="loading"
-          type="info"
-          loading-text="登录中..."
-          native-type="submit"
-          >登录</van-button
-        >
+        <van-button round block :loading="loading" type="info" loading-text="登录中..." native-type="submit">登录</van-button>
 
-        <van-button
-          style="margin-top: 10px"
-          plain
-          round
-          block
-          type="info"
-          native-type="button"
-          to="/signup"
-          >注册</van-button
-        >
+        <van-button style="margin-top: 10px" plain round block type="info" native-type="button" to="/signup">注册</van-button>
+        <van-button style="margin-top: 10px" round block type="primary" native-type="button" @click="handleCapture">拍照</van-button>
       </div>
     </van-form>
   </div>
@@ -67,43 +47,79 @@
 
 <script>
 export default {
-  name: "Login",
+  name: 'Login',
   data() {
     return {
       form: {
-        username: "",
-        password: "",
-        captcha: "",
+        username: '',
+        password: '',
+        captcha: '',
         isCaptchaShow: false,
-        sid: localStorage.getItem("sid") || "",
+        sid: localStorage.getItem('sid') || '',
       },
-
+      localIds: '',
       loading: false,
-      captchaSvg: "",
-    };
+      captchaSvg: '',
+    }
   },
   methods: {
     onSubmit() {
-      this.loading = true;
+      this.loading = true
       this.$store
-        .dispatch("user/signin", this.form)
+        .dispatch('user/signin', this.form)
         .then(() => {
-          this.$router.push("/power");
+          this.$router.push('/power')
           this.$notify({
-            type: "success",
-            message: "登录成功",
+            type: 'success',
+            message: '登录成功',
             duration: 2000,
             onOpened: () => {
-              this.loading = false;
+              this.loading = false
             },
-          });
+          })
         })
         .catch(() => {
-          this.loading = false;
-        });
+          this.loading = false
+        })
+    },
+    convertFileToBase64(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader()
+        reader.readAsDataURL(file)
+        reader.onload = () => {
+          resolve(reader.result)
+        }
+        reader.onerror = () => {
+          reject()
+        }
+      })
+    },
+    chooseImage({ success }) {
+      const el = document.createElement('input')
+      el.setAttribute('type', 'file')
+      el.setAttribute('accept', 'image/*')
+      el.setAttribute('capture', 'camera')
+      el.setAttribute('id', `el-${Date.now()}`)
+      el.style.display = 'none'
+      document.body.append(el)
+      el.addEventListener('change', async () => {
+        const file = el.files[0]
+        const base64 = await this.convertFileToBase64(file)
+        success({ localIds: base64 })
+      })
+      // 主动触发
+      el.click()
+    },
+    handleCapture() {
+      this.chooseImage({
+        success: ({ localIds }) => {
+          this.localIds = localIds
+          console.log('localIds', localIds)
+        },
+      })
     },
   },
-};
+}
 </script>
 
 <style lang="scss" scoped>
